@@ -1,0 +1,84 @@
+version: '3'
+
+services:
+  orchestrator:
+    build: ./orchestrator
+    image: orchestrator:latest
+    command: sh -c "sleep 15 && python3 -u db.py"
+    container_name: orchestrator
+    ports:
+      - "80:80"
+    volumes:
+      - ./orchestrator:/orchestrator
+    networks:
+      - backend
+    depends_on:
+      - rmq
+      - zoo
+
+  rmq:
+    image: rabbitmq:latest
+    networks:
+      - backend
+    hostname: rmq
+
+  zoo:
+    image: zookeeper:latest
+    hostname: zoo
+    networks:
+      - backend
+    environment:
+      - ZOO_MY_ID=1
+      - ZOO_SERVERS=server.1=0.0.0.0:2888:3888;2181
+
+  slave1:
+    build: ./worker
+    image: slave:latest
+    command: sh -c "sleep 25 && python3 -u worker.py"
+    container_name: slave1
+    volumes:
+    - ./worker:/worker
+    networks:
+      - backend
+    environment:
+      - WORKER_TYPE=slave
+      - DB_HOSTNAME=mongoslave1
+      - NODE_NAME=slave1
+    entrypoint: ["sh", "trap.sh"]
+    depends_on:
+      - rmq
+      - zoo
+      - master
+
+  mongoslave1:
+    image: mongo:3.6.3
+    container_name: mongoslave1
+    networks:
+      - backend
+
+  master:
+    build: ./worker
+    image: master:latest
+    command: sh -c "sleep 20 && python3 -u worker.py"
+    container_name: master
+    volumes:
+      - ./worker:/worker
+    networks:
+      - backend
+    environment:
+      - WORKER_TYPE=master
+      - DB_HOSTNAME=mongomaster
+      - NODE_NAME=master
+    entrypoint: ["sh", "trap.sh"]
+    depends_on:
+      - rmq
+      - zoo
+
+  mongomaster:
+    image: mongo:3.6.3
+    container_name: mongomaster
+    networks:
+      - backend
+
+networks:
+  backend:

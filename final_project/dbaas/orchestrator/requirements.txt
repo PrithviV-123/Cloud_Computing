@@ -1,0 +1,6 @@
+flask
+pika
+pymongo
+docker
+schedule
+kazoo
