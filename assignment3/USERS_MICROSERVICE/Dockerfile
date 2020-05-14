@@ -5,6 +5,6 @@ RUN apt-get -y install python3 python3-pip
 WORKDIR /app_users
 COPY . /app_users
 
-ENV TEAM_NAME=CC_
+ENV TEAM_NAME=CC_2394_0716_2374_2376
 
 RUN pip3 install -r requirements.txt
